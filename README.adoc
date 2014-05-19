@@ -5,7 +5,7 @@ In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  forma
 :toc:
 
 
-=== QUick Start Examples
+=== Quick Start Examples
 
 
 [source,javascript]
