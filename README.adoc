@@ -1,0 +1,45 @@
+= NODEMSH NodeJS implementation of Micro Service Shell
+
+In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  format.
+
+:toc:
+
+
+=== QUick Start Examples
+
+
+[source,javascript]
+----
+  var msh = require('msh'); 
+  var callback = function(actions) {
+          // Great, msh finished successfully now what?
+          console.dir(actions);
+          assert.equal(actions[0].type, 'http'); // every action has a type
+          assert.equal(actions[0].method, 'GET'); // every http type has a method
+          assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
+          assert.equal(JSON.parse(actions[2].response).payload.status, 200); // get http response status codes
+          assert.equal(JSON.parse(actions[5].response).payload.data, 'putData'); // put payload/response data
+          done();
+  };
+
+  var errCallback = function(status, host, data) {
+    // Oh noes! An error! Do something good to restore your Karma
+  };
+      
+  var testTransformer = function(data) {return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }'};
+  var putData = '{"data": "putData"}';
+
+  var host = "localhost";
+  var port = 8080;
+
+  // Here's the magic... 
+  // Eh? what happened to all the nested callbacks?
+  msh.chain(callback, errCallback)
+  .get(host, port, '/path1')
+  .pipe(testTransformer)
+  .post(host, port, '/path2')
+  .del(host, port, '/path3')
+  .get(host, port, '/path4')
+  .put(host, port, '/path5', putData)
+  .end();
+----
