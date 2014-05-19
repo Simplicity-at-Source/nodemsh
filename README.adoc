@@ -1,4 +1,4 @@
-= NODEMSH NodeJS implementation of Micro Service Shell
+= NodeMSH: A NodeJS implementation of Micro Service Shell
 
 In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  format.
 
