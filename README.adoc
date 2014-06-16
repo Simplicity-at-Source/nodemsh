@@ -10,36 +10,47 @@ In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  forma
 
 [source,javascript]
 ----
-  var msh = require('msh'); 
-  var callback = function(actions) {
-          // Great, msh finished successfully now what?
-          console.dir(actions);
-          assert.equal(actions[0].type, 'http'); // every action has a type
-          assert.equal(actions[0].method, 'GET'); // every http type has a method
-          assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
-          assert.equal(JSON.parse(actions[2].response).payload.status, 200); // get http response status codes
-          assert.equal(JSON.parse(actions[5].response).payload.data, 'putData'); // put payload/response data
-          done();
-  };
+    var msh = require('msh'); 
+    
+    var h = 'localhost';
+    var p = mockMshServicePort;
+    var url = '/some/path';
 
-  var errCallback = function(status, host, data) {
-    // Oh noes! An error! Do something good to restore your Karma
-  };
-      
-  var testTransformer = function(data) {return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }'};
-  var putData = '{"data": "putData"}';
+    var callback = function(actions) {
+              // Great, msh finished successfully now what?
+            console.log("action 0" + JSON.stringify(actions[0]));
+            console.log("action 1" + JSON.stringify(actions[1]));
+            console.log("action 2" + JSON.stringify(actions[2]));
+            console.log("action 3" + JSON.stringify(actions[3]));
+            console.log("action 4" + JSON.stringify(actions[4]));
+            console.log("action 5" + JSON.stringify(actions[5]));
 
-  var host = "localhost";
-  var port = 8080;
+              assert.equal(actions[0].type, 'http'); // every action has a type
+              assert.equal(actions[0].method, 'GET'); // every http type has a method
+              assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
+              assert.equal(actions[2].statusCode, 607); // get http response status codes
+              assert.equal(JSON.parse(actions[5].response).message, 'some test data'); // put payload/response data
+              done();
+      };
 
-  // Here's the magic... 
-  // Eh? what happened to all the nested callbacks?
-  msh.chain(callback, errCallback)
-  .get(host, port, '/path1')
-  .pipe(testTransformer)
-  .post(host, port, '/path2')
-  .del(host, port, '/path3')
-  .get(host, port, '/path4')
-  .put(host, port, '/path5', putData)
-  .end();
+      var errCallback = function(status, host, data) {
+        // Oh noes! An error! Do something good to restore your Karma
+      };
+
+      var testTransformer = function(data) {return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }'};
+      var putData = '{"data": "putData"}';
+
+      var host = "localhost";
+      var port = 8080;
+
+      // Here's the magic... 
+      // Eh? what happened to all the nested callbacks?
+      msh.init(callback, errCallback)
+      .get(h, p, '/path1')
+      .pipe(testTransformer)
+      .post(h, p, '/path2')
+      .del(h, p, '/path3')
+      .get(h, p, '/path4')
+      .put(h, p, '/path5', putData)
+      .end();
 ----

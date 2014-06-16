@@ -176,12 +176,12 @@ describe('test msh: ', function(){
 
             var callback = function(actions) {
                       // Great, msh finished successfully now what?
-                      console.log("action 0" + JSON.stringify(actions[0]));
-                      console.log("action 1" + JSON.stringify(actions[1]));
-                       console.log("action 2" + JSON.stringify(actions[2]));
-                         console.log("action 3" + JSON.stringify(actions[3]));
-                        console.log("action 4" + JSON.stringify(actions[4]));
-                        console.log("action 5" + JSON.stringify(actions[5]));
+                    console.log("action 0" + JSON.stringify(actions[0]));
+                    console.log("action 1" + JSON.stringify(actions[1]));
+                    console.log("action 2" + JSON.stringify(actions[2]));
+                    console.log("action 3" + JSON.stringify(actions[3]));
+                    console.log("action 4" + JSON.stringify(actions[4]));
+                    console.log("action 5" + JSON.stringify(actions[5]));
                              
                       assert.equal(actions[0].type, 'http'); // every action has a type
                       assert.equal(actions[0].method, 'GET'); // every http type has a method
