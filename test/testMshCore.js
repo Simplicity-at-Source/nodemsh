@@ -58,58 +58,7 @@ describe('test msh: ', function(){
     });
     
     
-    it('test msh with circuit breaking predicate', function(done){
-        
-            var h = 'localhost';
-            var p = mockMshServicePort;
-            var url = '/some/path';
-            
-           var payload = {"id":"sentiment","image":"sp_platform/uber-any","env":{"GIT_REPO_URL":"https://github.com/fuzzy-logic/sentiment.git", "DNS": "sentiment.muoncore.io"}};
-            
-            var errCallback = function(status, host, data) {
-                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
-                 assert.ok(false);
-            };
-            
-            var callback = function(actions) {
-                console.log('msh callback...');
-               // console.dir(actions);
-                
-                var getStatus = actions[0].statusCode;
-                var postStatus = actions[2].statusCode;
-                
-                console.log('action0: ' + JSON.stringify(actions[0]));
-                assert.equal(607, actions[0].statusCode);
-                assert.equal('http', actions[0].type);
-                assert.equal('GET', actions[0].method);
-                assert.ok(actions[0].response);
-                
-                
-                console.log('action1: ' + JSON.stringify(actions[1]));
-                assert.equal('stopPredicate', actions[1].type);
-                assert.equal(true, actions[1].response); //predicate returned false
-                
-                
-                console.log('action2: ' + JSON.stringify(actions[2]));
-                assert.equal('http', actions[2].type);
-                assert.equal('POST', actions[2].method);
-                assert.equal(undefined, actions[2].response);
-                
-                
-                done();
-                
-            };
-        
-        var predicate = function(prevAction) {
-            //console.log("predicate prevAction=%s", JSON.stringify(prevAction));
-            return true
-        };
-                                      
-        console.log('msh starting...');
-        msh.init(callback, errCallback).get(h, p, url, payload).stop(predicate).post(h, p, url).end();
-        
-    });
-    
+
     
     
     it('test msh carry-on predicate', function(done){
@@ -164,6 +113,111 @@ describe('test msh: ', function(){
         msh.init(callback, errCallback).get(h, p, url, payload).stop(predicate).post(h, p, url).end();
         
     });
+    
+
+        it('test msh with circuit breaking predicate', function(done){
+        
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+            
+           var payload = {"id":"sentiment","image":"sp_platform/uber-any","env":{"GIT_REPO_URL":"https://github.com/fuzzy-logic/sentiment.git", "DNS": "sentiment.muoncore.io"}};
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+                 assert.ok(false);
+            };
+            
+            var callback = function(actions) {
+                console.log('msh callback...');
+               // console.dir(actions);
+                
+                var getStatus = actions[0].statusCode;
+                var postStatus = actions[2].statusCode;
+                
+                console.log('action0: ' + JSON.stringify(actions[0]));
+                assert.equal(607, actions[0].statusCode);
+                assert.equal('http', actions[0].type);
+                assert.equal('GET', actions[0].method);
+                assert.ok(actions[0].response);
+                
+                
+                console.log('action1: ' + JSON.stringify(actions[1]));
+                assert.equal('stopPredicate', actions[1].type);
+                assert.equal(true, actions[1].response); //predicate returned false
+                
+                
+                console.log('action2: ' + JSON.stringify(actions[2]));
+                assert.equal('http', actions[2].type);
+                assert.equal('POST', actions[2].method);
+                assert.equal(undefined, actions[2].response);
+                
+                
+                done();
+                
+            };
+        
+        var predicate = function(prevAction) {
+            //console.log("predicate prevAction=%s", JSON.stringify(prevAction));
+            return true
+        };
+                                      
+        console.log('msh starting...');
+        msh.init(callback, errCallback).get(h, p, url, payload).stop(predicate).post(h, p, url).end();
+        
+    });
+    
+    it('test msh piping bewteen actions', function(done) {
+        
+        
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+
+            var callback = function(actions) {
+                      // Great, msh finished successfully now what?
+                      console.log("action 0" + JSON.stringify(actions[0]));
+                      console.log("action 1" + JSON.stringify(actions[1]));
+                       console.log("action 2" + JSON.stringify(actions[2]));
+                         console.log("action 3" + JSON.stringify(actions[3]));
+                        console.log("action 4" + JSON.stringify(actions[4]));
+                        console.log("action 5" + JSON.stringify(actions[5]));
+                             
+                      assert.equal(actions[0].type, 'http'); // every action has a type
+                      assert.equal(actions[0].method, 'GET'); // every http type has a method
+                      assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
+                      assert.equal(actions[2].statusCode, 607); // get http response status codes
+                      assert.equal(JSON.parse(actions[5].response).message, 'some test data'); // put payload/response data
+                      done();
+              };
+
+              var errCallback = function(status, host, data) {
+                // Oh noes! An error! Do something good to restore your Karma
+              };
+
+              var testTransformer = function(data) {return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }'};
+              var putData = '{"data": "putData"}';
+
+              var host = "localhost";
+              var port = 8080;
+
+              // Here's the magic... 
+              // Eh? what happened to all the nested callbacks?
+              msh.init(callback, errCallback)
+              .get(h, p, '/path1')
+              .pipe(testTransformer)
+              .post(h, p, '/path2')
+              .del(h, p, '/path3')
+              .get(h, p, '/path4')
+              .put(h, p, '/path5', putData)
+              .end();
+        
+        
+    });
+    
+    
+    
+    
 });
     
 
