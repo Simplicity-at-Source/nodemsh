@@ -173,6 +173,7 @@ describe('test msh: ', function(){
             var h = 'localhost';
             var p = mockMshServicePort;
             var url = '/some/path';
+            var pipeTransformerCalled = false;
 
             var callback = function(actions) {
                       // Great, msh finished successfully now what?
@@ -188,6 +189,8 @@ describe('test msh: ', function(){
                       assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
                       assert.equal(actions[2].statusCode, 607); // get http response status codes
                       assert.equal(JSON.parse(actions[5].response).message, 'some test data'); // put payload/response data
+                
+                      assert.ok(pipeTransformerCalled);
                       done();
               };
 
@@ -195,7 +198,11 @@ describe('test msh: ', function(){
                 // Oh noes! An error! Do something good to restore your Karma
               };
 
-              var testTransformer = function(data) {return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }'};
+              var testTransformer = function(data) {
+                  console.log('Transformer Called');
+                  pipeTransformerCalled = true; 
+                  return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }';
+              };
               var putData = '{"data": "putData"}';
 
               var host = "localhost";
