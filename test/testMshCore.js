@@ -1,7 +1,7 @@
 var http = require('http');
 var msh = require('../lib/msh.js');
 var assert = require('assert');
-var request = require("superagent");
+//var request = require("superagent");
 
 
 var mockMshServicePort = 18081;
@@ -14,7 +14,7 @@ function httpStartupComplete(service, port) {
 var requestHandler = function(req, res) {
     console.log("MockCallbackee called ");
     res.writeHead(607, {'Content-Type': 'application/json'});
-    res.write(JSON.stringify({}));
+    res.write(JSON.stringify({message: "some test data"}));
     res.end();
 };
 http.createServer(requestHandler).listen(mockMshServicePort, httpStartupComplete("mockMshCallbackService", mockMshServicePort));
@@ -54,6 +54,56 @@ describe('test msh: ', function(){
             };
              console.log('msh starting...');
             msh.init(callback, errCallback).put(h, p, url, payload).get(h, p, url).del(h, p, url).end();
+        
+    });
+    
+    
+    it('test msh with predicate branch logic', function(done){
+        
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+            
+           var payload = {"id":"sentiment","image":"sp_platform/uber-any","env":{"GIT_REPO_URL":"https://github.com/fuzzy-logic/sentiment.git", "DNS": "sentiment.muoncore.io"}};
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+                 assert.ok(false);
+            };
+            
+            var callback = function(actions) {
+                console.log('msh callback...');
+               // console.dir(actions);
+                
+                var getStatus = actions[0].statusCode;
+                var postStatus = actions[2].statusCode;
+                
+                console.log('action0: ' + JSON.stringify(actions[0]));
+                assert.equal(607, actions[0].statusCode);
+                assert.equal('http', actions[0].type);
+                assert.equal('GET', actions[0].method);
+                assert.ok(actions[0].response);
+                
+                
+                console.log('action1: ' + JSON.stringify(actions[1]));
+                 assert.equal('predicate', actions[1].type);
+                assert.equal(false, actions[1].response); //predicate returned false
+                
+                
+                console.log('action2: ' + JSON.stringify(actions[2]));
+                assert.equal('http', actions[2].type);
+                assert.equal('POST', actions[2].method);
+                assert.equal(undefined, actions[2].response);
+                
+                
+                done();
+                
+            };
+        
+        var predicate = function() {return false};
+                                      
+        console.log('msh starting...');
+        msh.init(callback, errCallback).get(h, p, url, payload).predicate(predicate).post(h, p, url).end();
         
     });
 });
