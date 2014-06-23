@@ -11,10 +11,11 @@ function httpStartupComplete(service, port) {
 }
 
 var mockHttpCallCounter = 0;
+var returnStatusCode = 200;
 
 var requestHandler = function(req, res) {
     console.log("MockCallbackee called ");
-    res.writeHead(607, {'Content-Type': 'application/json'});
+    res.writeHead(returnStatusCode, {'Content-Type': 'application/json'});
     res.write(JSON.stringify({message: "mock test data " + mockHttpCallCounter++}));
     res.end();
 };
@@ -28,6 +29,7 @@ describe('test msh: ', function(){
 
 
     it('basic msh test', function(done){
+         returnStatusCode =  200;
              mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
@@ -49,11 +51,11 @@ describe('test msh: ', function(){
                 //var get1results = JSON.parse(actions[1].response);
                 //var get2results = JSON.parse(actions[2].response);
                 
-                assert.equal(607, putStatus);
-                assert.equal(607, getStatus);
-                assert.equal(607, delStatus);
+                assert.equal(returnStatusCode, putStatus);
+                assert.equal(returnStatusCode, getStatus);
+                assert.equal(returnStatusCode, delStatus);
                 //assert.equal('cronjob1', results[0].id);
-                
+                 assert.equal(true, actions.allOk());
                 done();
                 
             };
@@ -67,6 +69,7 @@ describe('test msh: ', function(){
     
     
     it('test msh carry-on predicate', function(done){
+          returnStatusCode =  607; //use a silly return tpye to make sure nothing untoward is happening
               mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
@@ -87,7 +90,7 @@ describe('test msh: ', function(){
                 var postStatus = actions[2].statusCode;
                 
                 console.log('action0: ' + JSON.stringify(actions[0]));
-                assert.equal(607, actions[0].statusCode);
+                assert.equal(returnStatusCode, actions[0].statusCode);
                 assert.equal('http', actions[0].type);
                 assert.equal('GET', actions[0].method);
                 assert.ok(actions[0].response);
@@ -102,9 +105,9 @@ describe('test msh: ', function(){
                 assert.equal('http', actions[2].type);
                 assert.equal('POST', actions[2].method);
                 assert.ok(actions[2].response);
-                assert.equal(607, actions[2].statusCode);
+                assert.equal(returnStatusCode, actions[2].statusCode);
                 
-                
+                assert.equal(false, actions.allOk());
                 done();
                 
             };
@@ -121,6 +124,7 @@ describe('test msh: ', function(){
     
 
         it('test msh with circuit breaking predicate', function(done){
+              returnStatusCode =  201;
           mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
@@ -141,7 +145,7 @@ describe('test msh: ', function(){
                 var postStatus = actions[2].statusCode;
                 
                 console.log('action0: ' + JSON.stringify(actions[0]));
-                assert.equal(607, actions[0].statusCode);
+                assert.equal(returnStatusCode, actions[0].statusCode);
                 assert.equal('http', actions[0].type);
                 assert.equal('GET', actions[0].method);
                 assert.ok(actions[0].response);
@@ -156,7 +160,7 @@ describe('test msh: ', function(){
                 assert.equal('http', actions[2].type);
                 assert.equal('POST', actions[2].method);
                 assert.equal(undefined, actions[2].response);
-                
+                assert.equal(true, actions.allOk());
                 
                 done();
                 
@@ -174,6 +178,7 @@ describe('test msh: ', function(){
     
     
         it('test msh with multiple stop predicates', function(done){
+              returnStatusCode =  203;
           mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
@@ -194,7 +199,7 @@ describe('test msh: ', function(){
                 var postStatus = actions[2].statusCode;
                 
                 console.log('action0: ' + JSON.stringify(actions[0]));
-                assert.equal(607, actions[0].statusCode);
+                assert.equal(returnStatusCode, actions[0].statusCode);
                 assert.equal('http', actions[0].type);
                 assert.equal('GET', actions[0].method);
                 assert.ok(actions[0].response);
@@ -224,6 +229,7 @@ describe('test msh: ', function(){
                 assert.equal('PUT', actions[5].method);
                 assert.ok(actions[5].response);
 
+                assert.equal(true, actions.allOk());
                 done();
                 
             };
@@ -244,6 +250,7 @@ describe('test msh: ', function(){
     });    
     
     it('test msh piping bewteen actions', function(done) {
+          returnStatusCode =  201;
               mockHttpCallCounter = 0;   
         
             var h = 'localhost';
@@ -263,12 +270,13 @@ describe('test msh: ', function(){
                       assert.equal(actions[0].type, 'http'); // every action has a type
                       assert.equal(actions[0].method, 'GET'); // every http type has a method
                       assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
-                      assert.equal(actions[2].statusCode, 607); // get http response status codes
+                      assert.equal(actions[2].statusCode, returnStatusCode); // get http response status codes
                       assert.equal(actions[2].payload.message, 'this was transformed'); // check transformation
                       assert.equal(actions[2].payload.oldmessage.message, 'mock test data 0'); // check transformation
                       assert.equal(actions[5].response.message, 'mock test data 4'); // put payload/response data
                 
                       assert.ok(pipeTransformerCalled);
+                      assert.equal(true, actions.allOk());
                       done();
               };
 
