@@ -30,8 +30,9 @@ In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  forma
               assert.equal(actions[0].type, 'http'); // every action has a type
               assert.equal(actions[0].method, 'GET'); // every http type has a method
               assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
-              assert.equal(actions[2].statusCode, 607); // get http response status codes
-              assert.equal(JSON.parse(actions[5].response).message, 'some test data'); // put payload/response data
+              assert.equal(actions[2].statusCode, 201); // get http response status codes
+              assert.equal(actions[5].response.message, 'some test data'); // put payload/response data
+              assert.equal(true, actions.allOk()); // all http return code > 399
               done();
       };
 
@@ -81,7 +82,7 @@ In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  forma
             var postStatus = actions[2].statusCode;
             
             console.log('action0: ' + JSON.stringify(actions[0]));
-            assert.equal(607, actions[0].statusCode);
+            assert.equal(200, actions[0].statusCode);
             assert.equal('http', actions[0].type);
             assert.equal('GET', actions[0].method);
             assert.ok(actions[0].response);
