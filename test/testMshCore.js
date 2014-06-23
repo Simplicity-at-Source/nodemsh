@@ -10,20 +10,25 @@ function httpStartupComplete(service, port) {
     console.log("starting %s service on port %s", service, port);
 }
 
+var mockHttpCallCounter = 0;
 
 var requestHandler = function(req, res) {
     console.log("MockCallbackee called ");
     res.writeHead(607, {'Content-Type': 'application/json'});
-    res.write(JSON.stringify({message: "some test data"}));
+    res.write(JSON.stringify({message: "mock test data " + mockHttpCallCounter++}));
     res.end();
 };
 http.createServer(requestHandler).listen(mockMshServicePort, httpStartupComplete("mockMshCallbackService", mockMshServicePort));
 
 
 describe('test msh: ', function(){
+    
+    
+  
+
 
     it('basic msh test', function(done){
-        
+             mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
             var url = '/some/path';
@@ -62,7 +67,7 @@ describe('test msh: ', function(){
     
     
     it('test msh carry-on predicate', function(done){
-        
+              mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
             var url = '/some/path';
@@ -116,7 +121,7 @@ describe('test msh: ', function(){
     
 
         it('test msh with circuit breaking predicate', function(done){
-        
+          mockHttpCallCounter = 0;   
             var h = 'localhost';
             var p = mockMshServicePort;
             var url = '/some/path';
@@ -167,8 +172,79 @@ describe('test msh: ', function(){
         
     });
     
-    it('test msh piping bewteen actions', function(done) {
+    
+        it('test msh with multiple stop predicates', function(done){
+          mockHttpCallCounter = 0;   
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+            
+           var payload = {"id":"sentiment","image":"sp_platform/uber-any","env":{"GIT_REPO_URL":"https://github.com/fuzzy-logic/sentiment.git", "DNS": "sentiment.muoncore.io"}};
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+                 assert.ok(false);
+            };
+            
+            var callback = function(actions) {
+                console.log('msh callback...');
+               // console.dir(actions);
+                
+                var getStatus = actions[0].statusCode;
+                var postStatus = actions[2].statusCode;
+                
+                console.log('action0: ' + JSON.stringify(actions[0]));
+                assert.equal(607, actions[0].statusCode);
+                assert.equal('http', actions[0].type);
+                assert.equal('GET', actions[0].method);
+                assert.ok(actions[0].response);
+                
+                
+                console.log('action1: ' + JSON.stringify(actions[1]));
+                assert.equal('stopPredicate', actions[1].type);
+                assert.equal(false, actions[1].response); //predicate returned false
+                
+                console.log('action2: ' + JSON.stringify(actions[2]));
+                assert.equal('pipe', actions[2].type);
+
+              
+
+                console.log('action3: ' + JSON.stringify(actions[3]));
+                assert.equal('http', actions[3].type);
+                assert.equal('POST', actions[3].method);
+                assert.ok('POST', actions[3].payload.test); // ensure the previous pipe transforms the payload
+                assert.ok(actions[3].response);
+                
+                console.log('action4: ' + JSON.stringify(actions[4]));
+                assert.equal('stopPredicate', actions[4].type);
+                assert.equal(false, actions[4].response); //predicate returned false
+                
+                console.log('action5: ' + JSON.stringify(actions[5]));
+                assert.equal('http', actions[5].type);
+                assert.equal('PUT', actions[5].method);
+                assert.ok(actions[5].response);
+
+                done();
+                
+            };
         
+        var predicate = function(prevAction) {
+            //console.log("predicate prevAction=%s", JSON.stringify(prevAction));
+            return false;
+        };
+            
+         var transformer = function(prevAction) {
+            //console.log("predicate prevAction=%s", JSON.stringify(prevAction));
+            return {test: true};
+        };
+                                      
+        console.log('msh starting...');
+        msh.init(callback, errCallback).get(h, p, url, payload).stop(predicate).pipe(transformer).post(h, p, url).stop(predicate).put(h, p, url).end();
+        
+    });    
+    
+    it('test msh piping bewteen actions', function(done) {
+              mockHttpCallCounter = 0;   
         
             var h = 'localhost';
             var p = mockMshServicePort;
@@ -188,7 +264,9 @@ describe('test msh: ', function(){
                       assert.equal(actions[0].method, 'GET'); // every http type has a method
                       assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
                       assert.equal(actions[2].statusCode, 607); // get http response status codes
-                      assert.equal(JSON.parse(actions[5].response).message, 'some test data'); // put payload/response data
+                      assert.equal(actions[2].payload.message, 'this was transformed'); // check transformation
+                      assert.equal(actions[2].payload.oldmessage.message, 'mock test data 0'); // check transformation
+                      assert.equal(actions[5].response.message, 'mock test data 4'); // put payload/response data
                 
                       assert.ok(pipeTransformerCalled);
                       done();
@@ -201,7 +279,7 @@ describe('test msh: ', function(){
               var testTransformer = function(data) {
                   console.log('Transformer Called');
                   pipeTransformerCalled = true; 
-                  return '{"message": "this was transformed from:", "oldmessage": ' + data + ' }';
+                  return {message: 'this was transformed', oldmessage: data };
               };
               var putData = '{"data": "putData"}';
 
