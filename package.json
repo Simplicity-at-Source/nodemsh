@@ -2,7 +2,7 @@
     "name": "msh",
     "description": "Node Microservices Shell",
     "author": "Gawain Hammond",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "private": false,
     "repository": {
       "url": "https://github.com/Simplicity-at-Source/nodemsh"

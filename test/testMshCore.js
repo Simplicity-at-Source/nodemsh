@@ -1,8 +1,14 @@
 var http = require('http');
 var msh = require('../lib/msh.js');
 var assert = require('assert');
+var EventEmitter = require('events').EventEmitter;
+var channel = new EventEmitter();
 //var request = require("superagent");
 
+
+channel.on('ECONNRESET', function() {        
+        console.log('testMshCore.js event emitted');
+});
 
 var mockMshServicePort = 18081;
 
@@ -63,6 +69,37 @@ describe('test msh: ', function(){
             msh.init(callback, errCallback).put(h, p, url, payload).get(h, p, url).del(h, p, url).end();
         
     });
+    
+    
+     it('msh timeout', function(done){
+             returnStatusCode =  200;
+             mockHttpCallCounter = 0;   
+                var h = '127.0.254.8';
+                var p = 46000;
+                var url = '/some/path';
+         
+                var errCallback = function(status, host, data) {
+                    console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+                };
+
+                var callback = function(actions) {
+                    console.log('msh callback...');
+                   // console.dir(actions);
+                    assert.equal(undefined, actions[1]);
+                     assert.equal(false, actions.allOk());
+                    done();
+
+                };
+                 console.log('msh starting...');
+         
+         try {
+             msh.init(callback, errCallback).get(h, p, url).end();
+         }catch (err) {
+            console.log('testMshCore.js there was an error');  
+         }
+                
+
+        });    
     
     
 
@@ -160,7 +197,7 @@ describe('test msh: ', function(){
                 assert.equal('http', actions[2].type);
                 assert.equal('POST', actions[2].method);
                 assert.equal(undefined, actions[2].response);
-                assert.equal(true, actions.allOk());
+                assert.equal(false, actions.allOk());
                 
                 done();
                 
