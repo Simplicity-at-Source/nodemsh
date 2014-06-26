@@ -3,6 +3,8 @@ var msh = require('../lib/msh.js');
 var assert = require('assert');
 var EventEmitter = require('events').EventEmitter;
 var channel = new EventEmitter();
+var uuid = require('node-uuid');
+
 //var request = require("superagent");
 
 
@@ -20,19 +22,16 @@ var mockHttpCallCounter = 0;
 var returnStatusCode = 200;
 
 var requestHandler = function(req, res) {
-    console.log("MockCallbackee called ");
+    var requestId = uuid.v4();
+    console.log("MockCallbackee called requestId=" + requestId);
     res.writeHead(returnStatusCode, {'Content-Type': 'application/json'});
-    res.write(JSON.stringify({message: "mock test data " + mockHttpCallCounter++}));
+    res.write(JSON.stringify({requestId: requestId, message: "mock test data " + mockHttpCallCounter++}));
     res.end();
 };
 http.createServer(requestHandler).listen(mockMshServicePort, httpStartupComplete("mockMshCallbackService", mockMshServicePort));
 
 
-describe('test msh: ', function(){
-    
-    
-  
-
+describe('core msh tests: ', function(){
 
     it('basic msh test', function(done){
          returnStatusCode =  200;
@@ -70,7 +69,6 @@ describe('test msh: ', function(){
         
     });
     
-    
      it('msh timeout', function(done){
              returnStatusCode =  200;
              mockHttpCallCounter = 0;   
@@ -103,6 +101,134 @@ describe('test msh: ', function(){
     
     
 
+    
+    
+
+});
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+describe('extra msh tests: ', function(){
+       
+         
+    it('test urltemplating', function(done){
+        
+         returnStatusCode =  200;
+        mockHttpCallCounter = 0;   
+        
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+            var url2 = '/{first}/{second}/{third}';
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+            };
+            
+            var callback = function(actions) {
+                console.log('msh callback...');
+                var get1Status = actions[0].statusCode;
+                var get1RequestId = actions[0].response.requestId;
+                var get2Status = actions[2].statusCode;
+                
+                assert.equal(returnStatusCode, get1Status);
+                assert.equal(returnStatusCode, get2Status);
+                
+                
+                assert.equal(url2,  actions[2].pathTemplate);
+                
+                assert.equal('/foo/bar/' + get1RequestId,  actions[2].path);
+                assert.equal(true, actions.allOk());
+                done();
+                
+            };
+        
+            var processor = function (result) {
+                return {    
+                    first: "foo",
+                    second: "bar",
+                    third: result.requestId
+                }
+            }
+             console.log('msh starting...');
+            msh.init(callback, errCallback).get(h, p, url).template(processor).get(h, p, url2).end();
+    });
+    
+    
+ it('test msh piping bewteen actions', function(done) {
+          returnStatusCode =  201;
+              mockHttpCallCounter = 0;   
+        
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = '/some/path';
+            var pipeTransformerCalled = false;
+
+            var callback = function(actions) {
+                      // Great, msh finished successfully now what?
+                    console.log("action 0" + JSON.stringify(actions[0]));
+                    console.log("action 1" + JSON.stringify(actions[1]));
+                    console.log("action 2" + JSON.stringify(actions[2]));
+                    console.log("action 3" + JSON.stringify(actions[3]));
+                    console.log("action 4" + JSON.stringify(actions[4]));
+                    console.log("action 5" + JSON.stringify(actions[5]));
+                             
+                      assert.equal(actions[0].type, 'http'); // every action has a type
+                      assert.equal(actions[0].method, 'GET'); // every http type has a method
+                      assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
+                      assert.equal(actions[2].statusCode, returnStatusCode); // get http response status codes
+                      assert.equal(actions[2].payload.message, 'this was transformed'); // check transformation
+                      assert.equal(actions[2].payload.oldmessage.message, 'mock test data 0'); // check transformation
+                      assert.equal(actions[5].response.message, 'mock test data 4'); // put payload/response data
+                
+                      assert.ok(pipeTransformerCalled);
+                      assert.equal(true, actions.allOk());
+                      done();
+              };
+
+              var errCallback = function(status, host, data) {
+                // Oh noes! An error! Do something good to restore your Karma
+              };
+
+              var testTransformer = function(data) {
+                  console.log('Transformer Called');
+                  pipeTransformerCalled = true; 
+                  return {message: 'this was transformed', oldmessage: data };
+              };
+              var putData = '{"data": "putData"}';
+
+              var host = "localhost";
+              var port = 8080;
+
+              // Here's the magic... 
+              // Eh? what happened to all the nested callbacks?
+              msh.init(callback, errCallback)
+              .get(h, p, '/path1')
+              .pipe(testTransformer)
+              .post(h, p, '/path2')
+              .del(h, p, '/path3')
+              .get(h, p, '/path4')
+              .put(h, p, '/path5', putData)
+              .end();
+
+    });    
+    
+ 
     
     
     it('test msh carry-on predicate', function(done){
@@ -214,7 +340,7 @@ describe('test msh: ', function(){
     });
     
     
-        it('test msh with multiple stop predicates', function(done){
+    it('test msh with multiple stop predicates', function(done){
               returnStatusCode =  203;
           mockHttpCallCounter = 0;   
             var h = 'localhost';
@@ -286,69 +412,6 @@ describe('test msh: ', function(){
         
     });    
     
-    it('test msh piping bewteen actions', function(done) {
-          returnStatusCode =  201;
-              mockHttpCallCounter = 0;   
-        
-            var h = 'localhost';
-            var p = mockMshServicePort;
-            var url = '/some/path';
-            var pipeTransformerCalled = false;
-
-            var callback = function(actions) {
-                      // Great, msh finished successfully now what?
-                    console.log("action 0" + JSON.stringify(actions[0]));
-                    console.log("action 1" + JSON.stringify(actions[1]));
-                    console.log("action 2" + JSON.stringify(actions[2]));
-                    console.log("action 3" + JSON.stringify(actions[3]));
-                    console.log("action 4" + JSON.stringify(actions[4]));
-                    console.log("action 5" + JSON.stringify(actions[5]));
-                             
-                      assert.equal(actions[0].type, 'http'); // every action has a type
-                      assert.equal(actions[0].method, 'GET'); // every http type has a method
-                      assert.equal(actions[1].type, 'pipe'); // this means we piped data from one action to another
-                      assert.equal(actions[2].statusCode, returnStatusCode); // get http response status codes
-                      assert.equal(actions[2].payload.message, 'this was transformed'); // check transformation
-                      assert.equal(actions[2].payload.oldmessage.message, 'mock test data 0'); // check transformation
-                      assert.equal(actions[5].response.message, 'mock test data 4'); // put payload/response data
-                
-                      assert.ok(pipeTransformerCalled);
-                      assert.equal(true, actions.allOk());
-                      done();
-              };
-
-              var errCallback = function(status, host, data) {
-                // Oh noes! An error! Do something good to restore your Karma
-              };
-
-              var testTransformer = function(data) {
-                  console.log('Transformer Called');
-                  pipeTransformerCalled = true; 
-                  return {message: 'this was transformed', oldmessage: data };
-              };
-              var putData = '{"data": "putData"}';
-
-              var host = "localhost";
-              var port = 8080;
-
-              // Here's the magic... 
-              // Eh? what happened to all the nested callbacks?
-              msh.init(callback, errCallback)
-              .get(h, p, '/path1')
-              .pipe(testTransformer)
-              .post(h, p, '/path2')
-              .del(h, p, '/path3')
-              .get(h, p, '/path4')
-              .put(h, p, '/path5', putData)
-              .end();
-        
-        
-    });
-    
-    
     
     
 });
-    
-
-
