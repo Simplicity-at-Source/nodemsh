@@ -111,3 +111,40 @@ In http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[Asciidoc]  forma
     console.log('msh starting...');
     msh.init(callback, errCallback).get(h, p, url, payload).stop(predicate).post(h, p, url).end();
 ```
+
+
+
+
+=== Using URL Templating
+
+
+
+```
+
+            var h = 'localhost';
+            var p = 80;
+            var url = '/some/path';
+            var url2 = '/{first}/{second}/{third}';
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+            };
+            
+            var callback = function(actions) {
+                var get1Id = actions[0].response.id;
+                assert.equal(url2,  actions[2].pathTemplate);
+                assert.equal('/foo/bar/' + get1Id,  actions[2].path);
+                done();
+                
+            };
+        
+            var processor = function (result) {
+                return {    
+                    first: "foo",
+                    second: "bar",
+                    third: result.id // result = {id: 3}
+                }
+            }
+            msh.init(callback, errCallback).get(h, p, url).template(processor).get(h, p, url2).end();
+
+```
