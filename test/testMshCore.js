@@ -158,11 +158,11 @@ describe('extra msh tests: ', function(){
                 
             };
         
-            var processor = function (result) {
+            var processor = function (lastAction, queue) {
                 return {    
                     first: "foo",
                     second: "bar",
-                    third: result.requestId
+                    third: lastAction.response.requestId
                 }
             }
              console.log('msh starting...');
