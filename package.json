@@ -2,7 +2,7 @@
     "name": "msh",
     "description": "Node Microservices Shell",
     "author": "Gawain Hammond",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "private": false,
     "repository": {
       "url": "https://github.com/Simplicity-at-Source/nodemsh"
@@ -10,7 +10,9 @@
     "dependencies": {
         "async": "*",
         "restify": "*",
-        "superagent": "*"
+        "superagent": "*",
+        "url-template": "*",
+        "node-uuid": "*"
     },
     "main": "./lib/msh",
     "bin": {
@@ -19,8 +21,7 @@
     "devDependencies": {
         "mocha": "*",
         "assert": "*",
-        "url-template": "*",
-        "node-uuid": "*",
+
         "validator": "*"
     },
     "engines": {
