@@ -96,14 +96,7 @@ describe('core msh tests: ', function(){
             console.log('testMshCore.js there was an error');  
          }
                 
-
         });    
-    
-    
-
-    
-    
-
 });
     
 
@@ -414,4 +407,61 @@ describe('extra msh tests: ', function(){
     
     
     
+});
+
+
+
+
+
+
+
+
+
+describe('url msh tests: ', function(){
+
+    it('url based msh test for https', function(done){
+         returnStatusCode =  200;
+             mockHttpCallCounter = 0;   
+            var h = 'localhost';
+            var p = mockMshServicePort;
+            var url = 'http://' + h + ':' + p + '/some/path';
+            
+           var payload = {id:"1234", data: "the is the data payload"};
+            
+            var errCallback = function(status, host, data) {
+                console.log('errCallback status=%s, host=%s data=%s', status, host, data);
+            };
+            
+            var callback = function(actions) {
+                console.log('msh callback...');
+               // console.dir(actions);
+                
+                var getStatus = actions[0].statusCode;
+                var postStatus = actions[1].statusCode;
+                var putStatus = actions[2].statusCode;
+                var delStatus = actions[3].statusCode;
+
+                assert(actions[0].response.requestId != null);   
+                assert.equal(actions[0].response.message, 'mock test data 0'); 
+                assert(actions[1].response.requestId != null);   
+                assert.equal(actions[1].response.message, 'mock test data 1');  
+                assert(actions[2].response.requestId != null);   
+                assert.equal(actions[2].response.message, 'mock test data 2');    
+                assert(actions[3].response.requestId != null);   
+                assert.equal(actions[3].response.message, 'mock test data 3'); 
+                
+                assert.equal(true, actions.allOk());
+                done();
+                
+            };
+            console.log('msh starting... url=' + url);
+            msh.init(callback, errCallback)
+            .url(url, 'GET', {})
+            .url(url, 'POST', {}, payload)
+            .url(url, 'PUT', {}, payload)
+            .url(url, 'DELETE', {})
+            .end();
+        
+    });
+
 });
